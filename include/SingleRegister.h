@@ -30,6 +30,13 @@ namespace regs
      */
     using access_t = reg_type;
 
+  protected:
+    access_t value;
+
+  public:
+    access_t read() { return value; }
+    void write(access_t &v) { value = v; }
+
     /**
      * @brief A bitregion within a register
      *
@@ -112,6 +119,45 @@ namespace regs
         reg |= (value & mask) << offset;
       };
     };
+
+    template <unsigned offset_>
+    class Bit
+    {
+      static_assert(offset_ + 1 <= sizeof(access_t) * 8,
+                    "invalid offset");
+
+    public:
+
+      static constexpr unsigned offset = offset_;
+      
+      static constexpr access_t mask = ((access_t)1 << 1) - 1;
+
+      static constexpr access_t reg_mask = (access_t)(1 << offset);
+
+      static constexpr access_t clear_mask = (access_t)~reg_mask;
+
+    };
+
+    template <typename TBit>
+    inline access_t get() const{
+      return (value >> TBit::offset) & TBit::mask;
+
+    }
+
+    template <typename TBit>
+    inline void clear() { value &= TBit::clear_mask; }
+
+    template <typename TBit>
+    inline void set()
+      {
+        value &= TBit::clear_mask;
+        value |= (1 & TBit::mask) << TBit::offset;
+      };
+
+
+
+
+
   };
 
 }
