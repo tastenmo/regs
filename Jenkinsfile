@@ -9,14 +9,15 @@ agent {
 	stages {
         stage('Build') {
             steps {
-                cmake installation: 'InSearchPath'
-                cmakeBuild buildType: 'Release', cleanBuild: true, installation: 'InSearchPath', steps: [[withCmake: true]]
+                sh 'cmake -S . -B build'
+                sh 'cmake --build .'
             }
         }
 
         stage('Test') {
             steps {
-                ctest 'InSearchPath'
+                sh 'cmake --build . --target test-cpp17'
+                ctest 'ctest -C Debug -T test'
             }
         }
 
