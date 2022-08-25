@@ -10,14 +10,14 @@ agent {
         stage('Build') {
             steps {
                 sh 'cmake -S . -B build'
-                sh 'cmake --build .'
+                sh 'cmake --build build'
             }
         }
 
         stage('Test') {
             steps {
-                sh 'cmake --build . --target test-cpp17'
-                ctest 'ctest -C Debug -T test'
+                //sh 'cmake --build . --target test-cpp17'
+                sh 'ctest --test-dir build'
             }
         }
 
