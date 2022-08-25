@@ -152,11 +152,7 @@ namespace regs
       {
         value &= TBit::clear_mask;
         value |= (1 & TBit::mask) << TBit::offset;
-      };
-
-
-
-
+      }
 
   };
 
