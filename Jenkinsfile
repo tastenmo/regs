@@ -5,6 +5,7 @@ agent {
         dir 'docker'
         
     }
+}
     stages {
         stage('Test') {
             steps {
