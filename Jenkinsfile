@@ -6,11 +6,18 @@ agent {
         
     }
 }
-    stages {
-        stage('Test') {
+	stages {
+        stage('Build') {
             steps {
-                sh 'gcc --version'
+                cmake installation: 'InSearchPath'
+                cmakeBuild buildType: 'Release', cleanBuild: true, installation: 'InSearchPath', steps: [[withCmake: true]]
             }
         }
-    }
+
+        stage('Test') {
+            steps {
+                ctest 'InSearchPath'
+            }
+        }
+
 }
