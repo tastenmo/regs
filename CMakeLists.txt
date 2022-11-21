@@ -1,5 +1,7 @@
 cmake_minimum_required(VERSION 3.18)
 
+include(cmake/pico_sdk_import.cmake)
+
 project(regs VERSION "0.1.0" LANGUAGES CXX)
 
 if(CMAKE_PROJECT_NAME STREQUAL PROJECT_NAME)
