@@ -22,7 +22,7 @@
 
 #include <iostream>
 
-#include <SingleRegister.h>
+#include <RegisterBase.h>
 
 int main() {
   

@@ -9,162 +9,89 @@
  *
  */
 
+#include <RegisterBase.h>
+
 #include <catch2/catch_all.hpp>
-#include <SingleRegister.h>
+
+#if __cplusplus >= 202002L
+
+template <typename T>
+concept has_write = requires(const T& t) { t.write(); };
+#endif
 
 using namespace regs;
 
-struct Cpu_state;
+struct State;
 
 /**
  * Exemplary highly structured type for accessing 'cpu_state'
  */
-struct Cpu_state : SingleRegister<uint16_t>
-{
+struct State : RegisterBase<State, uint32_t> {
+  using Bool1 = Field<State, 0, 1>;
+  using Bool2 = Field<State, 1, 1>;
+  using Bool3 = Field<State, 2, 1>;
 
-  using reg_type = SingleRegister<uint16_t>::reg_type;
+  using Bool4 = Field<State, 3, 1, read_only>;
+  using Bool5 = Field<State, 4, 1>;
 
-  struct Mode : Field<reg_type, 0, 4, read_write>
-  {
-    enum
-    {
-      KERNEL = 0b1000,
-      USER = 0b1001,
-      MONITOR = 0b1010,
-    };
-  };
-
-  struct A : Field<reg_type, 6, 1, read_write>
-  {
-  };
-
-  struct B : Field<reg_type, 8, 1, read_write>
-  {
-  };
-
-  struct C : Field<reg_type, 10, 1, read_write>
-  {
-  };
-
-  struct Irq : Field<reg_type, 12, 3, read_write>
-  {
-  };
-
-  // struct Invalid_bit  : Bitfield<18,1> { };
-  // struct Invalid_area : Bitfield<15,4> { };
+  using Byte2 = Field<State, 8, 8>;
 };
 
-struct AccessStruct : SingleRegister<uint32_t>
-{
+struct Control;
+struct Control : RegisterBase<Control, uint8_t> {
+  using Bool1 = Field<Control, 0, 1>;
+  using Bool2 = Field<Control, 1, 1>;
+  using Bool3 = Field<Control, 2, 1>;
 
-  using reg_type = SingleRegister::reg_type;
-
-  struct Nibble0 : Field<reg_type, 0, 4, read_only>{};
-  struct Bit5 : Field<reg_type, 5, 1, read_only>{};
-  struct Bit6 : Field<reg_type, 6, 1, read_write>{};
-
-  struct Nibble1 : Field<reg_type, 8, 4, write_only>{};
-
+  using Bool4 = Field<Control, 3, 1>;
+  using Bool5 = Field<Control, 4, 1>;
 };
 
-TEST_CASE("regs_read_write_is")
-{
+using FreeField = Field<uint32_t, 0, 1>;
 
-  Cpu_state cpu;
-  SECTION("set")
-  {
-    // Cpu_state::reg_type state = cpu.read();
-    cpu.write<Cpu_state::Mode, Cpu_state::Mode::MONITOR>();
+uint32_t raw_state;
 
-    cpu.write<Cpu_state::A, 1>();
-    cpu.set<Cpu_state::B>();
-    cpu.write<Cpu_state::C>(1);
+TEST_CASE("regs_read_write_is") {
+  State state;
 
-    cpu.write<Cpu_state::Irq>(0xdddd);
+  state.write<State::Bool1>(1);
 
-    // REQUIRE(cpu_state == 0b0101010101001010);
-    REQUIRE(cpu.read<Cpu_state::Mode>() == Cpu_state::Mode::MONITOR);
-    REQUIRE(cpu.is<Cpu_state::A, 1>());
-    REQUIRE(cpu.is<Cpu_state::B, 1>());
-    REQUIRE(cpu.read<Cpu_state::C>() == 1);
-    REQUIRE(cpu.is<Cpu_state::Irq, 0b101>());
-  }
+  state.write<State::Bool2, 0>();
 
-  SECTION("clear")
-  {
-    cpu.write<Cpu_state::Mode, Cpu_state::Mode::MONITOR>();
+  state.write<State::Byte2>(0xFE);
 
-    cpu.write<Cpu_state::A, 1>();
-    cpu.set<Cpu_state::B>();
-    cpu.write<Cpu_state::C>(1);
-
-    cpu.write<Cpu_state::Irq>(0xdddd);
-
-    cpu.clear<Cpu_state::B>();
-    cpu.clear<Cpu_state::Irq>();
-
-    // REQUIRE(cpu_state == 0b0000010001001010);
-    REQUIRE(cpu.read<Cpu_state::Mode>() == Cpu_state::Mode::MONITOR);
-    REQUIRE(cpu.is<Cpu_state::A, 1>());
-    REQUIRE(cpu.read<Cpu_state::B>() == 0);
-    REQUIRE(cpu.read<Cpu_state::C>() == 1);
-    REQUIRE(cpu.read<Cpu_state::Irq>() == 0);
-  }
+  REQUIRE(state.is<State::Bool1, true>());
+  REQUIRE(state.read<State::Bool1>() == 1);
+  REQUIRE_FALSE(state.is<State::Bool2, true>());
+  REQUIRE(state.read<State::Bool2>() == 0);
+  REQUIRE(state.is<State::Byte2, 0xFE>());
+  REQUIRE(state.read<State::Byte2>() == 0xFE);
 }
 
-TEST_CASE("placement new")
-{
+TEST_CASE("placement new") {
+  State* new_state = new (&raw_state) State();
 
-  uint16_t bare_reg;
+  new_state->write<State::Bool1>(1);
 
-  Cpu_state *cpu = new (&bare_reg) Cpu_state();
+  new_state->write<State::Bool2, 0>();
 
-  SECTION("set")
-  {
+  new_state->write<State::Byte2>(0xFE);
 
-    cpu->write<Cpu_state::Mode>(Cpu_state::Mode::MONITOR);
-    cpu->set<Cpu_state::A>();
-    cpu->set<Cpu_state::B>();
-    cpu->write<Cpu_state::C>(0xdddd);
-    cpu->write<Cpu_state::Irq, 0xdddd>();
-    // Cpu_state::Invalid_bit::set(state, 0xdddd);
-    // Cpu_state::Invalid_area::set(state, 0xdddd);
-    // cpu->write(state);
-    // state = cpu->read();
+  REQUIRE(new_state->is<State::Bool1, true>());
+  REQUIRE(new_state->read<State::Bool1>() == 1);
+  REQUIRE_FALSE(new_state->is<State::Bool2, true>());
+  REQUIRE(new_state->read<State::Bool2>() == 0);
+  REQUIRE(new_state->is<State::Byte2, 0xFE>());
+  REQUIRE(new_state->read<State::Byte2>() == 0xFE);
 
-    REQUIRE(bare_reg == 0b0101010101001010);
-    REQUIRE(cpu->is<Cpu_state::Mode, Cpu_state::Mode::MONITOR>());
-    REQUIRE(cpu->is<Cpu_state::A, 1>());
-    REQUIRE(cpu->is<Cpu_state::B, 1>());
-    REQUIRE(cpu->is<Cpu_state::C, 1>());
-    REQUIRE(cpu->is<Cpu_state::Irq, 0b101>());
-  }
-
-  SECTION("clear")
-  {
-    bare_reg = 0b0101010101001010;
-
-    cpu->clear<Cpu_state::B>();
-    cpu->clear<Cpu_state::Irq>();
-
-    REQUIRE(bare_reg == 0b0000010001001010);
-    REQUIRE(cpu->is<Cpu_state::B, 0>());
-    REQUIRE(cpu->is<Cpu_state::Irq, 0>());
-  }
+  // This fails
+  // new_state->read<Control::Bool2>();
 }
 
-TEST_CASE("ro rw wo")
-{
+#if __cplusplus >= 202002L
+TEST_CASE("read only ", "[!mayfail]") {
+  // State state;
 
-  uint32_t bare = 0;
-
-  AccessStruct *acc = new (&bare) AccessStruct();
-
-  REQUIRE(acc->is<AccessStruct::Bit5, 0>());
-
-  //REQUIRE(acc->set<AccessStruct::Bit5, 0>());
-
-  
-
-  
+  STATIC_REQUIRE_FALSE(has_write<State::Bool4>);
 }
+#endif
