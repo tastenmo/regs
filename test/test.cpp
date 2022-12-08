@@ -16,7 +16,29 @@
 #if __cplusplus >= 202002L
 
 template <typename T>
-concept has_write = requires(const T& t) { t.write(); };
+concept has_write = requires(const T& t, typename T::reg_type& target, typename T::reg_type value) {
+                      typename T::reg_type;
+                      t.write(target, value);
+                    };
+
+template <typename T, typename value>
+concept has_write_constant = requires(const T& t, typename T::reg_type& target) {
+                               typename T::reg_type;
+                               t.template write_constant<value>(target);
+                             };
+
+template <typename T>
+concept has_read = requires(const T& t, const typename T::reg_type& target) {
+                     typename T::reg_type;
+                     {t.read(target) } -> std::same_as<typename T::reg_type>;
+                   };
+
+template <typename T>
+concept has_is = requires(const T& t, const typename T::reg_type& target) {
+   typename T::reg_type;
+   t.template is<typename T::reg_type>(target);
+   
+    };
 #endif
 
 using namespace regs;
@@ -89,9 +111,17 @@ TEST_CASE("placement new") {
 }
 
 #if __cplusplus >= 202002L
-TEST_CASE("read only ", "[!mayfail]") {
+TEST_CASE("read only ") {
   // State state;
 
+  STATIC_REQUIRE(has_write<State::Bool5>);
+  //STATIC_REQUIRE(has_write_constant<State::Bool5, State::Bool5::reg_type>);
+  STATIC_REQUIRE(has_read<State::Bool5>);
+  //STATIC_REQUIRE(has_is<State::Bool5>);
+
   STATIC_REQUIRE_FALSE(has_write<State::Bool4>);
+  //STATIC_REQUIRE_FALSE(has_write_constant<State::Bool4>);
+  STATIC_REQUIRE(has_read<State::Bool4>);
+  //STATIC_REQUIRE(has_is<State::Bool4>);
 }
 #endif

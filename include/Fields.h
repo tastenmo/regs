@@ -44,7 +44,7 @@ struct Field {
   }
 
   template <reg_type value>
-  static inline bool is(reg_type& target) noexcept {
+  static inline bool is(const reg_type& target) noexcept {
     return access::template is<reg_type, mask, offset, value>(target);
   }
 
