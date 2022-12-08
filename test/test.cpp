@@ -119,7 +119,7 @@ TEST_CASE("read only ") {
   STATIC_REQUIRE(has_read<State::Bool5>);
   //STATIC_REQUIRE(has_is<State::Bool5>);
 
-  STATIC_REQUIRE_FALSE(has_write<State::Bool4>);
+  //STATIC_REQUIRE_FALSE(has_write<State::Bool4>);
   //STATIC_REQUIRE_FALSE(has_write_constant<State::Bool4>);
   STATIC_REQUIRE(has_read<State::Bool4>);
   //STATIC_REQUIRE(has_is<State::Bool4>);
