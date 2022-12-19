@@ -52,14 +52,16 @@ function(make_test src target std)
 endfunction()
 
 make_test(test.cpp test-cpp17 c++17)
-#make_test(test_flags.cpp test_flags-cpp17 c++17)
+make_test(testBytes.cpp test_bytes-cpp17 c++17)
 
 if(HAS_CPP20_FLAG)
     make_test(test.cpp test-cpp20 c++20)
+    make_test(testBytes.cpp test_bytes-cpp20 c++20)
     #make_test(test_flags.cpp test_flags-cpp20 c++20)
 endif()
 
 if(HAS_CPPLATEST_FLAG)
     make_test(test.cpp test-cpplatest c++latest)
+    make_test(testBytes.cpp test_bytes-cpplatest cpplatest)
     #make_test(test_flags.cpp test_flags-cpplatest c++latest)
 endif()
