@@ -128,39 +128,74 @@ byte_array(T, Bs...) -> byte_array<sizeof...(Bs) + 1>;
 template <std::size_t Size, class IntegerType>
 constexpr byte_array<Size> array_shift_right(const byte_array<Size>& src,
                                              IntegerType shift) noexcept {
-  byte_array<Size> result = src;
+    byte_array<Size> result = src;
 
-  // std::cout << "shift: " << shift << ", size: " << Size << std::endl;
+    // std::cout << "shift: " << shift << ", size: " << Size << std::endl;
 
-  bool carry[Size];
+    bool carry[Size];
 
-  for (IntegerType i = 0; i < shift; i++) {
-    // std::cout << "iteration i: " << i << std::endl;
+    for (IntegerType i = 0; i < shift; i++) {
+        // std::cout << "iteration i: " << i << std::endl;
 
-    for (int j = (int)Size - 1; j >= 0; j--) {
-      // std::cout << "iteration j: " << j << std::endl;
+        for (int j = (int)Size - 1; j >= 0; j--) {
+            // std::cout << "iteration j: " << j << std::endl;
 
-      auto shifted = shift_right(result[j]);
+            auto shifted = shift_right(result[j]);
 
-      carry[j] = shifted.second;
-      // std::cout << "byte[" << j << "] = 0x" << std::hex <<
-      // shifted.first << " carry "
-      //           << carry[j] << std::endl;
+            carry[j] = shifted.second;
+            // std::cout << "byte[" << j << "] = 0x" << std::hex <<
+            // shifted.first << " carry "
+            //           << carry[j] << std::endl;
 
-      if (j < ((int)Size) - 1) {
-        if (carry[j + 1]) {
-          shifted.first |= std::byte{0x80};
+            if (j < ((int)Size) - 1) {
+                if (carry[j + 1]) {
+                    shifted.first |= std::byte{0x80};
+                }
+            }
+            result[j] = shifted.first;
+
+            // std::cout << "result[" << j << "] = 0x" << std::hex <<
+            // shifted.first << " carry "
+            //           << carry[j] << std::endl;
         }
-      }
-      result[j] = shifted.first;
-
-      // std::cout << "result[" << j << "] = 0x" << std::hex <<
-      // shifted.first << " carry "
-      //           << carry[j] << std::endl;
     }
-  }
 
-  return result;
+    return result;
+}
+
+template <std::size_t Size, class IntegerType>
+constexpr byte_array<Size> array_shift_left(const byte_array<Size>& src,
+                                            IntegerType shift) noexcept {
+    byte_array<Size> result = src;
+
+    // std::cout << "shift: " << shift << ", size: " << Size << std::endl;
+
+    bool carry[Size];
+
+    for (IntegerType i = 0; i < shift; i++) {
+        // std::cout << "iteration i: " << i << std::endl;
+
+        for (unsigned j = 0; j < Size; j++) {
+            // std::cout << "iteration j: " << j << std::endl;
+
+            auto shifted = shift_left(result[j]);
+            carry[j] = shifted.second;
+
+            if (j > 0) {
+                if (carry[j - 1]) {
+                    shifted.first |= std::byte{0x01};
+                }
+            }
+
+            result[j] = shifted.first;
+
+            // std::cout << "result[" << j << "] = 0x" << std::hex <<
+            // shifted.first << " carry "
+            //           << carry[j] << std::endl;
+        }
+    }
+
+    return result;
 }
 
 }  // namespace regs

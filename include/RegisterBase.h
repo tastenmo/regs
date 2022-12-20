@@ -1,8 +1,15 @@
 #pragma once
 
+#include "Bytes.h"
 #include "Fields.h"
 
 namespace regs {
+
+/**
+ * @brief Tag for no initailzing construction
+ *
+ */
+struct noInit {};
 
 /**
  * @brief Register with bitfields
@@ -20,39 +27,60 @@ class RegisterBase {
   using reg = Reg;
   using reg_type = Reg_type;
 
+  static constexpr size_t size = sizeof(Reg_type);
+
+  using target_type = byte_array<size>;
+
  private:
-  reg_type _target;
+  target_type _target;
 
  public:
-  // template <typename T, template <typename, typename> class Cont >
+  /**
+   * @brief Default constructor with initialization
+   *
+   */
+  explicit RegisterBase() : _target() {}
+
+  /**
+   * @brief Tagged constructor without initialization, to be used with placement
+   * new
+   *
+   */
+  explicit RegisterBase(noInit) {}
+
+  /**
+   * @brief Field read
+   * 
+   * @tparam TField 
+   * @return requires 
+   */
   template <typename TField>
+    requires std::same_as<reg, typename TField::reg>
   reg_type read() {
-    static_assert(std::is_same_v<reg, typename TField::reg>, "invalid Field");
     return TField::read(_target);
   }
 
   template <typename TField>
+    requires std::same_as<reg, typename TField::reg>
   void write(reg_type value) {
-    static_assert(std::is_same_v<reg, typename TField::reg>, "invalid Field");
+    
     TField::write(_target, value);
-    // fields.write(_target, value);
+
   }
 
-  //    template <typename... TFields, typename... Args>
-  //    void write(Args... values) {
-  //        write<TFields...>(values...);
-  //    }
 
   template <typename TField, reg_type value>
+    requires std::same_as<reg, typename TField::reg>
   void write() {
-    static_assert(std::is_same_v<reg, typename TField::reg>, "invalid Field");
-
+    //static_assert(std::is_same_v<reg, typename TField::reg>, "invalid Field");
     TField::template write_constant<value>(_target);
   }
 
   template <typename TField, reg_type value>
+      requires std::same_as<reg, typename TField::reg>
+
   bool is() {
-    static_assert(std::is_same_v<reg, typename TField::reg>, "invalid Field");
+//    static_assert(std::is_same_v<reg, typename TField::reg>, "invalid Field");
     return TField::template is<value>(_target);
   }
 };
