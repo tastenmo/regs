@@ -11,6 +11,8 @@
 
 #pragma once
 
+#include <bit>
+
 namespace regs {
 
 struct read_only {};
