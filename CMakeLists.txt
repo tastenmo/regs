@@ -1,6 +1,7 @@
 cmake_minimum_required(VERSION 3.18)
 
 #include(cmake/pico_sdk_import.cmake)
+include(CheckCXXCompilerFlag)
 
 project(regs VERSION "0.1.0" LANGUAGES CXX)
 
@@ -10,10 +11,18 @@ else()
     set(IS_TOPLEVEL_PROJECT FALSE)
 endif()
 
+if(CMAKE_CXX_COMPILER_ID MATCHES "Clang")
+    set(CMAKE_VERBOSE_MAKEFILE ON)
 
-add_compile_options(-stdlib=libc++)
+    add_compile_options(-stdlib=libc++)
 
-add_link_options(-stdlib=libc++ -lc++abi)
+    add_link_options(-stdlib=libc++ -lc++abi)
+
+    check_cxx_compiler_flag(-std=c++20 HAS_CPP20_FLAG)
+endif()
+
+
+
 
 option(REGS_OPT_BUILD_EXAMPLES "Build regs examples" ${IS_TOPLEVEL_PROJECT})
 option(REGS_OPT_BUILD_TESTS "Build and perform regs tests" ${IS_TOPLEVEL_PROJECT})

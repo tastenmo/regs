@@ -14,7 +14,7 @@ function(make_example target)
     set_target_properties(${target} PROPERTIES CXX_EXTENSIONS OFF)
     target_compile_features(${target} PRIVATE cxx_std_17)
     target_compile_options(${target} PRIVATE ${OPTIONS})
-    target_link_options(${target}  PRIVATE -static-libgcc -static-libstdc++)
+    #target_link_options(${target}  PRIVATE -static-libgcc -static-libstdc++)
     target_link_libraries(${target} PRIVATE ${CMAKE_PROJECT_NAME})
 endfunction()
 
