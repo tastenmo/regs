@@ -1,0 +1,1 @@
+FROM martinescad/clang16:latest

@@ -14,6 +14,10 @@ set(CMAKE_CXX_STANDARD 20)
 set(CMAKE_CXX_STANDARD_REQUIRED On)
 set(CMAKE_CXX_EXTENSIONS Off)
 
+add_compile_options(-stdlib=libc++)
+
+add_link_options(-stdlib=libc++ -lc++abi)
+
 option(REGS_OPT_BUILD_EXAMPLES "Build regs examples" ${IS_TOPLEVEL_PROJECT})
 option(REGS_OPT_BUILD_TESTS "Build and perform regs tests" ${IS_TOPLEVEL_PROJECT})
 option(REGS_OPT_INSTALL "Generate and install regs target" ${IS_TOPLEVEL_PROJECT})
