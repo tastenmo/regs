@@ -10,9 +10,6 @@ else()
     set(IS_TOPLEVEL_PROJECT FALSE)
 endif()
 
-set(CMAKE_CXX_STANDARD 20)
-set(CMAKE_CXX_STANDARD_REQUIRED On)
-set(CMAKE_CXX_EXTENSIONS Off)
 
 add_compile_options(-stdlib=libc++)
 
@@ -39,6 +36,7 @@ target_include_directories(${PROJECT_NAME}
         INTERFACE
             $<BUILD_INTERFACE:${CMAKE_CURRENT_SOURCE_DIR}/include>
             $<INSTALL_INTERFACE:include>)
+target_compile_features(${PROJECT_NAME} INTERFACE cxx_std_20)
 
 write_basic_package_version_file(${PROJECT_NAME}ConfigVersion.cmake
         VERSION ${PROJECT_VERSION}

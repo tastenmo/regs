@@ -12,6 +12,7 @@
 #pragma once
 
 #include <cstdint>
+#include <cstddef>
 #include <iostream>
 #include <limits>
 #include <utility>
