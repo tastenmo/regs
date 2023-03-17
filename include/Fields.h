@@ -12,6 +12,7 @@
 #pragma once
 
 #include <bit>
+#include <span>
 
 namespace regs {
 
@@ -100,7 +101,7 @@ struct Field {
         return _maskBytes;
     }
 
-    static constexpr auto read_masked(const target_type& target) {
+    static constexpr auto read_masked(std::span<const std::byte> const target) {
         value_type result;
 
         std::cout << "read_masked - count_mask_bytes: " << count_mask_bytes << std::endl;
@@ -125,7 +126,7 @@ struct Field {
         return result;
     }
 
-    static constexpr void write_masked(target_type& target, value_type value) {
+    static constexpr void write_masked(std::span<std::byte> target, value_type value) {
         using ValueArray = byte_array<count_mask_bytes>;
 
         std::cout << "write_masked - count_mask_bytes: " << count_mask_bytes << std::endl;
@@ -153,27 +154,27 @@ struct Field {
         return;
     }
 
-    static inline value_type read(const target_type& target) noexcept
+    static inline value_type read(std::span<const std::byte> const target) noexcept
         requires details::is_readable<access>
     {
         return read_masked(target);
     }
 
-    static inline void write(target_type& target, value_type value) noexcept
+    static inline void write(std::span<std::byte> target, value_type value) noexcept
         requires details::is_writeable<access>
     {
         write_masked(target, value);
     }
 
     template <value_type value>
-    static inline void write_constant(target_type& target) noexcept
+    static inline void write_constant(std::span<std::byte> target) noexcept
         requires details::is_writeable<access>
     {
         write_masked(target, value);
     }
 
     template <value_type value>
-    static inline bool is(const target_type& target) noexcept
+    static inline bool is(std::span<const std::byte> const target) noexcept
         requires details::is_readable<access>
     {
         return read_masked(target) == value;
