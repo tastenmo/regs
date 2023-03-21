@@ -29,18 +29,18 @@ public:
    */
   template <typename TField>
     requires std::same_as<reg, typename TField::reg>
-  reg_type read() {
+  TField::value_type read() {
     return TField::read(static_cast<Derived *>(this)->span());
   }
 
   template <typename TField>
     requires std::same_as<reg, typename TField::reg>
-  void write(reg_type value) {
+  void write(TField::value_type value) {
 
     TField::write(static_cast<Derived *>(this)->span(), value);
   }
 
-  template <typename TField, reg_type value>
+  template <typename TField, TField::value_type value>
     requires std::same_as<reg, typename TField::reg>
   void write() {
     // static_assert(std::is_same_v<reg, typename TField::reg>, "invalid
@@ -49,7 +49,7 @@ public:
         static_cast<Derived *>(this)->span());
   }
 
-  template <typename TField, reg_type value>
+  template <typename TField, TField::value_type value>
     requires std::same_as<reg, typename TField::reg>
 
   bool is() {

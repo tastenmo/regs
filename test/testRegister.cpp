@@ -35,6 +35,47 @@ struct State : Register<State, uint32_t> {
   using Nibble1 = Field<State, 20, 6>;
 };
 
+struct GPIO_Ctrl;
+
+struct GPIO_Ctrl : Register<GPIO_Ctrl, uint32_t> {
+  using Register::Register;
+
+  using FuncSel = Field<GPIO_Ctrl, 0, 5>;
+  struct OutOver : Field<GPIO_Ctrl, 8, 2> {
+    enum {
+      OutFromPeri = 0b00,
+      InvertedOutFromPeri = 0b01,
+      Low = 0b10,
+      High = 0b11
+    };
+  };
+  // using OutOver = Field<GPIO_Ctrl, 8, 2>;
+
+  enum class OE_OverValue {
+    OE_FromPeri = 0b00,
+    InvertedOE_FromPeri = 0b01,
+    Disable = 0b10,
+    Enable = 0b11
+  };
+
+  using OE_Over = Field<GPIO_Ctrl, 12, 2, read_write, OE_OverValue>;
+
+  enum class InOverValue {
+    PeriInput = 0b00,
+    InvertedPeriInput = 0b01,
+    Low = 0b10,
+    High = 0b11
+  };
+
+  struct InOver : Field<GPIO_Ctrl, 16, 2,read_write, InOverValue>{
+
+    using enum InOverValue;
+
+  };
+
+  using IrqOver = Field<GPIO_Ctrl, 28, 2>;
+};
+
 uint32_t raw_state;
 
 TEST_CASE("Bools", "[regs]") {
@@ -119,4 +160,44 @@ TEST_CASE("BitsAndBytes", "[regs]") {
   REQUIRE(new_state->is<State::Bits1, 2>());
   REQUIRE(new_state->is<State::Bits2, 0x0f>());
   REQUIRE(new_state->read<State::Nibble1>() == 0b101010);
+}
+
+TEST_CASE("Enums", "[regs]") {
+  GPIO_Ctrl ctrl;
+
+  REQUIRE(ctrl.is<GPIO_Ctrl::OutOver, GPIO_Ctrl::OutOver::OutFromPeri>());
+
+  ctrl.write<GPIO_Ctrl::OutOver, GPIO_Ctrl::OutOver::High>();
+
+  REQUIRE(ctrl.is<GPIO_Ctrl::OutOver, GPIO_Ctrl::OutOver::High>());
+  REQUIRE(ctrl.read<GPIO_Ctrl::OutOver>() == GPIO_Ctrl::OutOver::High);
+
+  ctrl.write<GPIO_Ctrl::OutOver>(GPIO_Ctrl::OutOver::Low);
+  REQUIRE(ctrl.is<GPIO_Ctrl::OutOver, GPIO_Ctrl::OutOver::Low>());
+  REQUIRE(ctrl.read<GPIO_Ctrl::OutOver>() == GPIO_Ctrl::OutOver::Low);
+
+  // ctrl.read<GPIO_Ctrl::OE_Over>();
+
+  REQUIRE(ctrl.is<GPIO_Ctrl::OE_Over, GPIO_Ctrl::OE_OverValue::OE_FromPeri>());
+  REQUIRE(ctrl.read<GPIO_Ctrl::OE_Over>() ==
+          GPIO_Ctrl::OE_OverValue::OE_FromPeri);
+
+  ctrl.write<GPIO_Ctrl::OE_Over, GPIO_Ctrl::OE_OverValue::Disable>();
+
+  REQUIRE(ctrl.is<GPIO_Ctrl::OE_Over, GPIO_Ctrl::OE_OverValue::Disable>());
+  REQUIRE(ctrl.read<GPIO_Ctrl::OE_Over>() == GPIO_Ctrl::OE_OverValue::Disable);
+
+
+  
+  REQUIRE(ctrl.is<GPIO_Ctrl::InOver, GPIO_Ctrl::InOver::PeriInput>());
+  REQUIRE(ctrl.read<GPIO_Ctrl::InOver>() == GPIO_Ctrl::InOver::PeriInput);
+
+  ctrl.write<GPIO_Ctrl::InOver>(GPIO_Ctrl::InOver::High);
+
+  REQUIRE(ctrl.is<GPIO_Ctrl::InOver, GPIO_Ctrl::InOver::High>());
+  REQUIRE(ctrl.read<GPIO_Ctrl::InOver>() == GPIO_Ctrl::InOver::High);
+
+  //STATIC_REQUIRE(ctrl.write<GPIO_Ctrl::InOver, true>());
+
+
 }
