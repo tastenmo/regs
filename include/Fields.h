@@ -53,6 +53,8 @@ struct Field {
 
   using value_type = Value_type;
 
+  static constexpr size_t value_size = sizeof(value_type); 
+
   using target_type = typename Reg::target_type;
 
   static_assert(width >= 1, "invalid width");
@@ -122,7 +124,7 @@ struct Field {
 
     std::cout << "read_masked - Bytes: " << Bytes << std::endl;
 
-    auto shifted = array_shift_right(Bytes, offset);
+    auto shifted = array_shift_right<count_mask_bytes, unsigned, value_size>(Bytes, offset);
 
     std::cout << "read_masked - Shifted: " << shifted << std::endl;
 
@@ -165,14 +167,18 @@ struct Field {
                                      value_type value)
     requires std::integral<value_type>
   {
-    using ValueArray = byte_array<count_mask_bytes>;
+    using ValueArray = byte_array<value_size>;
 
     std::cout << "write_masked - count_mask_bytes: " << count_mask_bytes
               << std::endl;
 
-    ValueArray value_bytes;
+    ValueArray values;
 
-    value_bytes = std::bit_cast<ValueArray>(value);
+    values = std::bit_cast<ValueArray>(value);
+
+    byte_array<count_mask_bytes> value_bytes;
+
+    std::copy(values.begin(), values.begin() + value_size, value_bytes.begin());
 
     std::cout << "write_masked - value_bytes: " << value_bytes << std::endl;
 

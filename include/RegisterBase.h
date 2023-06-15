@@ -57,6 +57,11 @@ public:
     //    Field");
     return TField::template is<value>(static_cast<Derived *>(this)->span());
   }
+
+  reg_type read() {
+    return std::bit_cast<reg_type>(static_cast<Derived *>(this)->const_target());
+  }
+
 };
 
 } // namespace regs

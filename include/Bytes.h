@@ -126,10 +126,11 @@ struct byte_array {
 template <std::same_as<std::byte> T, std::same_as<std::byte>... Bs>
 byte_array(T, Bs...) -> byte_array<sizeof...(Bs) + 1>;
 
-template <std::size_t Size, class IntegerType>
-constexpr byte_array<Size> array_shift_right(const byte_array<Size>& src,
+template <std::size_t Size, class IntegerType, std::size_t ToSize = Size>
+constexpr byte_array<ToSize> array_shift_right(const byte_array<Size>& src,
                                              IntegerType shift) noexcept {
     byte_array<Size> result = src;
+    byte_array<ToSize> out;
 
     // std::cout << "shift: " << shift << ", size: " << Size << std::endl;
 
@@ -160,8 +161,9 @@ constexpr byte_array<Size> array_shift_right(const byte_array<Size>& src,
             //           << carry[j] << std::endl;
         }
     }
+    std::copy(result.begin(), result.begin() + ToSize, out.begin());
 
-    return result;
+    return out;
 }
 
 template <std::size_t Size, class IntegerType>
@@ -197,6 +199,10 @@ constexpr byte_array<Size> array_shift_left(const byte_array<Size>& src,
     }
 
     return result;
+}
+
+constexpr std::byte operator""_b(unsigned long long int value) noexcept {
+  return std::byte{static_cast<unsigned char>(value)};
 }
 
 }  // namespace regs

@@ -28,7 +28,7 @@ struct State : Register<State, uint32_t> {
 
   using Bits1 = Field<State, 4, 3>;
 
-  using Byte2 = Field<State, 8, 8>;
+  using Byte2 = Field<State, 8, 8, read_write, uint8_t>;
 
   using Bits2 = Field<State, 16, 4>;
 
@@ -133,6 +133,14 @@ TEST_CASE("BitsAndBytes", "[regs]") {
   REQUIRE(state.is<State::Nibble1, 0>());
 
   state.write<State::Bits1>(2);
+
+  auto result = state.read<State::Byte2>();
+
+  STATIC_REQUIRE(std::is_same_v<decltype(result), uint8_t>);
+
+  state.write<State::Byte2>(0x23);
+
+  REQUIRE(state.is<State::Byte2, 0x23>());
 
   REQUIRE(state.read<State::Bits1>() == 2);
   REQUIRE(state.is<State::Bits1, 2>());
