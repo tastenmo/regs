@@ -34,6 +34,9 @@ concept is_writeable = std::is_same_v<T, read_write>;
 template <typename T>
 concept is_writeonly = std::is_same_v<T, write_only>;
 
+template <unsigned bit_offset, unsigned width>
+concept is_trivially_accessible = bit_offset == 0 && (width % 8) == 0;
+
 } // namespace details
 
 /**
@@ -42,7 +45,7 @@ concept is_writeonly = std::is_same_v<T, write_only>;
  * @tparam offset offset to the first bit
  * @tparam width bit width of the field
  */
-template <typename Reg, unsigned offset, unsigned width,
+template <typename Reg, unsigned offset, unsigned width, unsigned start_byte = 0,
           typename Access = read_write,
           typename Value_type = typename Reg::reg_type>
 struct Field {
@@ -62,7 +65,7 @@ struct Field {
                 "invalid width/offset");
 
   // byte_offset
-  static constexpr unsigned byte_offset = offset / 8;
+  static constexpr unsigned byte_offset = start_byte + offset / 8;
 
   static constexpr unsigned bit_offset = offset % 8;
 
