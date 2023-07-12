@@ -28,7 +28,7 @@ struct State : Register<State, uint32_t> {
 
   using Bits1 = Field<State, 4, 3>;
 
-  using Byte2 = Field<State, 8, 8, read_write, uint8_t>;
+  using Byte2 = Field<State, 8, 8, 0, read_write, uint8_t>;
 
   using Bits2 = Field<State, 16, 4>;
 
@@ -58,7 +58,7 @@ struct GPIO_Ctrl : Register<GPIO_Ctrl, uint32_t> {
     Enable = 0b11
   };
 
-  using OE_Over = Field<GPIO_Ctrl, 12, 2, read_write, OE_OverValue>;
+  using OE_Over = Field<GPIO_Ctrl, 12, 2, 0, read_write, OE_OverValue>;
 
   enum class InOverValue {
     PeriInput = 0b00,
@@ -67,7 +67,7 @@ struct GPIO_Ctrl : Register<GPIO_Ctrl, uint32_t> {
     High = 0b11
   };
 
-  struct InOver : Field<GPIO_Ctrl, 16, 2,read_write, InOverValue>{
+  struct InOver : Field<GPIO_Ctrl, 16, 2, 0, read_write, InOverValue>{
 
     using enum InOverValue;
 

@@ -11,6 +11,7 @@
 
 #pragma once
 
+#include "Bytes.h"
 #include <bit>
 #include <span>
 
@@ -45,8 +46,8 @@ concept is_trivially_accessible = bit_offset == 0 && (width % 8) == 0;
  * @tparam offset offset to the first bit
  * @tparam width bit width of the field
  */
-template <typename Reg, unsigned offset, unsigned width, unsigned start_byte = 0,
-          typename Access = read_write,
+template <typename Reg, unsigned offset, unsigned width,
+          unsigned start_byte = 0, typename Access = read_write,
           typename Value_type = typename Reg::reg_type>
 struct Field {
   using reg = Reg;
@@ -56,7 +57,7 @@ struct Field {
 
   using value_type = Value_type;
 
-  static constexpr size_t value_size = sizeof(value_type); 
+  static constexpr size_t value_size = sizeof(value_type);
 
   using target_type = typename Reg::target_type;
 
@@ -68,6 +69,8 @@ struct Field {
   static constexpr unsigned byte_offset = start_byte + offset / 8;
 
   static constexpr unsigned bit_offset = offset % 8;
+
+  static constexpr unsigned byte_count = ((bit_offset + width) / 8);
 
   static constexpr unsigned count_mask_bytes = sizeof(target_type);
 
@@ -127,7 +130,8 @@ struct Field {
 
     std::cout << "read_masked - Bytes: " << Bytes << std::endl;
 
-    auto shifted = array_shift_right<count_mask_bytes, unsigned, value_size>(Bytes, offset);
+    auto shifted = array_shift_right<count_mask_bytes, unsigned, value_size>(
+        Bytes, offset);
 
     std::cout << "read_masked - Shifted: " << shifted << std::endl;
 
@@ -139,7 +143,7 @@ struct Field {
   static constexpr auto read_masked(std::span<const std::byte> const target)
     requires std::is_enum_v<value_type>
   {
-    //value_type result;
+    // value_type result;
 
     std::cout << "read_masked - count_mask_bytes: " << count_mask_bytes
               << std::endl;
@@ -161,10 +165,33 @@ struct Field {
 
     auto number = std::bit_cast<std::underlying_type_t<value_type>>(shifted);
 
-
     return value_type{number};
   }
 
+  static constexpr auto read_trivial(std::span<const std::byte> const target)
+    requires std::integral<value_type>
+  {
+    value_type result;
+
+    std::cout << "read_bytes integral - byte_offset: " << byte_offset << " byte_count: " << byte_count << std::endl; 
+
+    //auto Bytes = to_byte_array(target.subspan(byte_offset, byte_count));
+    auto Bytes = to_byte_array<byte_count>(target);
+    
+    result = std::bit_cast<value_type>(Bytes);
+
+    return result;
+  }
+
+  static constexpr auto read_trivial(std::span<const std::byte> const target)
+    requires std::is_enum_v<value_type>
+  {
+    std::cout << "read_bytes enum - byte_offset: " << byte_offset << " byte_count: " << byte_count << std::endl; 
+
+    auto number = std::bit_cast<std::underlying_type_t<value_type>>(target.subspan(byte_offset, byte_count));
+
+    return value_type{number};
+  }
 
   static constexpr void write_masked(std::span<std::byte> target,
                                      value_type value)
@@ -238,9 +265,16 @@ struct Field {
 
   static inline value_type
   read(std::span<const std::byte> const target) noexcept
-    requires details::is_readable<access>
+    requires details::is_readable<access> && (!details::is_trivially_accessible<bit_offset, width>)
   {
     return read_masked(target);
+  }
+
+  static inline value_type
+  read(std::span<const std::byte> const target) noexcept
+    requires details::is_readable<access> && details::is_trivially_accessible<bit_offset, width>
+  {
+    return read_trivial(target);
   }
 
   static inline void write(std::span<std::byte> target,

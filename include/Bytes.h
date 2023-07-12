@@ -15,6 +15,7 @@
 #include <cstddef>
 #include <iostream>
 #include <limits>
+#include <span>
 #include <utility>
 
 #include "Utility.h"
@@ -125,6 +126,18 @@ struct byte_array {
  */
 template <std::same_as<std::byte> T, std::same_as<std::byte>... Bs>
 byte_array(T, Bs...) -> byte_array<sizeof...(Bs) + 1>;
+
+
+template<std::size_t N>
+constexpr auto to_byte_array(std::span<const std::byte> const src) noexcept {
+    byte_array<N> result;
+
+    for (std::size_t i = 0; i < N; i++) {
+        result[i] = std::byte{src[i]};
+    }
+
+    return result;
+}
 
 template <std::size_t Size, class IntegerType, std::size_t ToSize = Size>
 constexpr byte_array<ToSize> array_shift_right(const byte_array<Size>& src,
