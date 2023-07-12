@@ -32,7 +32,7 @@
             "type": "lldb",
             "request": "launch",
             "name": "Launch",
-            "program": "${workspaceFolder}/build/test/testRegisterPack-cpp20",
+            "program": "${workspaceFolder}/build/test/test_regs-cpp20",
             "args": [],
             "stopOnEntry": true,
             "cwd": "${workspaceFolder}"

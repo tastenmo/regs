@@ -173,11 +173,12 @@ struct Field {
   {
     value_type result;
 
-    std::cout << "read_bytes integral - byte_offset: " << byte_offset << " byte_count: " << byte_count << std::endl; 
+    std::cout << "read_trivial integral - byte_offset: " << byte_offset
+              << " byte_count: " << byte_count << std::endl;
 
-    //auto Bytes = to_byte_array(target.subspan(byte_offset, byte_count));
-    auto Bytes = to_byte_array<byte_count>(target);
-    
+    auto Bytes = to_byte_array<byte_count>(target.subspan(byte_offset, byte_count));
+    //auto Bytes = to_byte_array<byte_count>(target);
+
     result = std::bit_cast<value_type>(Bytes);
 
     return result;
@@ -186,9 +187,11 @@ struct Field {
   static constexpr auto read_trivial(std::span<const std::byte> const target)
     requires std::is_enum_v<value_type>
   {
-    std::cout << "read_bytes enum - byte_offset: " << byte_offset << " byte_count: " << byte_count << std::endl; 
+    std::cout << "read_trivial enum - byte_offset: " << byte_offset
+              << " byte_count: " << byte_count << std::endl;
 
-    auto number = std::bit_cast<std::underlying_type_t<value_type>>(target.subspan(byte_offset, byte_count));
+    auto number = std::bit_cast<std::underlying_type_t<value_type>>(
+        target.subspan(byte_offset, byte_count));
 
     return value_type{number};
   }
@@ -263,39 +266,109 @@ struct Field {
     return;
   }
 
+  static constexpr void write_trivial(std::span<std::byte> target,
+                                      value_type value)
+    requires std::integral<value_type>
+  {
+    using ValueArray = byte_array<byte_count>;
+
+    std::cout << "write_trivial integral - byte_offset: " << byte_offset
+              << " byte_count: " << byte_count << std::endl;
+
+    ValueArray values;
+
+    values = std::bit_cast<ValueArray>(value);
+
+    auto sub_target = target.subspan(byte_offset, byte_count);
+
+    std::copy(values.begin(), values.begin() + byte_count, sub_target.begin());
+
+    return;
+  }
+
+  static constexpr void write_trivial(std::span<std::byte> target,
+                                      value_type value)
+    requires std::is_enum_v<value_type>
+  {
+    using ValueArray = byte_array<byte_count>;
+
+    std::cout << "write_trivial enum - byte_offset: " << byte_offset
+              << " byte_count: " << byte_count << std::endl;
+
+    ValueArray values;
+
+    auto number = std::bit_cast<std::underlying_type_t<value_type>>(value);
+
+    values = std::bit_cast<ValueArray>(number);
+    auto sub_target = target.subspan(byte_offset, byte_count);
+
+    std::copy(values.begin(), values.begin() + byte_count, sub_target.begin());
+
+    return;
+  }
+
   static inline value_type
   read(std::span<const std::byte> const target) noexcept
-    requires details::is_readable<access> && (!details::is_trivially_accessible<bit_offset, width>)
+    requires details::is_readable<access> &&
+             (!details::is_trivially_accessible<bit_offset, width>)
   {
     return read_masked(target);
   }
 
   static inline value_type
   read(std::span<const std::byte> const target) noexcept
-    requires details::is_readable<access> && details::is_trivially_accessible<bit_offset, width>
+    requires details::is_readable<access> &&
+             details::is_trivially_accessible<bit_offset, width>
   {
     return read_trivial(target);
   }
 
   static inline void write(std::span<std::byte> target,
                            value_type value) noexcept
-    requires details::is_writeable<access>
+    requires details::is_writeable<access> &&
+             (!details::is_trivially_accessible<bit_offset, width>)
+  {
+    write_masked(target, value);
+  }
+
+    static inline void write(std::span<std::byte> target,
+                           value_type value) noexcept
+    requires details::is_writeable<access> &&
+             details::is_trivially_accessible<bit_offset, width>
+  {
+    write_trivial(target, value);
+  }
+
+  template <value_type value>
+  static inline void write_constant(std::span<std::byte> target) noexcept
+    requires details::is_writeable<access> &&
+             (!details::is_trivially_accessible<bit_offset, width>)
   {
     write_masked(target, value);
   }
 
   template <value_type value>
   static inline void write_constant(std::span<std::byte> target) noexcept
-    requires details::is_writeable<access>
+    requires details::is_writeable<access> &&
+             details::is_trivially_accessible<bit_offset, width>
   {
-    write_masked(target, value);
+    write_trivial(target, value);
   }
 
   template <value_type value>
   static inline bool is(std::span<const std::byte> const target) noexcept
-    requires details::is_readable<access>
+    requires details::is_readable<access>  &&
+             (!details::is_trivially_accessible<bit_offset, width>)
   {
     return read_masked(target) == value;
+  }
+
+    template <value_type value>
+  static inline bool is(std::span<const std::byte> const target) noexcept
+    requires details::is_readable<access>  &&
+             details::is_trivially_accessible<bit_offset, width>
+  {
+    return read_trivial(target) == value;
   }
 };
 } // namespace regs
