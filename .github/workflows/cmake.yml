@@ -8,7 +8,7 @@ on:
 
 env:
   # Customize the CMake build type here (Release, Debug, RelWithDebInfo, etc.)
-  BUILD_TYPE: Release
+  BUILD_TYPE: Debug
 
 jobs:
   build:
@@ -29,6 +29,12 @@ jobs:
       if: contains(matrix.os, 'ubuntu')
       run: sudo ln -s libc++.so.1 /lib/x86_64-linux-gnu/libc++.so
       working-directory: ${{ env.LLVM_PATH }}/lib
+
+    - name: Symlink libc++abi.so (Linux)
+      if: contains(matrix.os, 'ubuntu')
+      run: sudo ln -s libc++abi.so.1 /lib/x86_64-linux-gnu/libc++abi.so
+      working-directory: ${{ env.LLVM_PATH }}/lib
+
 
     - name: Configure CMake
       # Configure CMake in a 'build' subdirectory. `CMAKE_BUILD_TYPE` is only required if you are using a single-configuration generator such as make.
