@@ -76,7 +76,36 @@ struct GPIO_Ctrl : Register<GPIO_Ctrl, uint32_t> {
   using IrqOver = Field<GPIO_Ctrl, 28, 2>;
 };
 
+struct Trivial;
+
+struct Trivial : Register<Trivial, uint32_t> {
+  using Register::Register;
+
+  using Bool1 = Field<Trivial, 0, 1>;
+  using Bool2 = Field<Trivial, 1, 1>;
+  using Bool3 = Field<Trivial, 2, 1>;
+
+  using Bits1 = Field<Trivial, 4, 4>;
+
+  using TrivialByte1 = Field<Trivial, 0, 8, 0, read_write, uint8_t>;
+
+  using TrivialByte2 = Field<Trivial, 0, 8, 1, read_write, uint8_t>;
+
+  using Byte2 = Field<Trivial, 4, 8, 0, read_write, uint8_t>;
+
+  using TrivialWord = Field<Trivial, 0, 16, 2, read_write, uint16_t>;
+
+  using TrivialByte3 = Field<Trivial, 0, 8, 2, read_write, uint8_t>;
+
+  using TrivialByte4 = Field<Trivial, 0, 8, 3, read_write, uint8_t>;
+
+  using TrivialValue = Field<Trivial, 0, 32, 0, read_write, uint32_t>;
+
+};
+
 uint32_t raw_state;
+
+uint32_t raw_trivial;
 
 TEST_CASE("Bools", "[regs]") {
   State state;
@@ -206,6 +235,61 @@ TEST_CASE("Enums", "[regs]") {
   REQUIRE(ctrl.read<GPIO_Ctrl::InOver>() == GPIO_Ctrl::InOver::High);
 
   //STATIC_REQUIRE(ctrl.write<GPIO_Ctrl::InOver, true>());
+
+
+}
+
+
+TEST_CASE("Trivial", "[regs]") {
+  
+  raw_trivial = 0x04030201;
+
+  Trivial *new_trivial = new (&raw_trivial) Trivial(noInit{});
+
+  REQUIRE(new_trivial->is<Trivial::Bool1, 1>());
+  REQUIRE(new_trivial->is<Trivial::Bool2, 0>());
+
+  REQUIRE(new_trivial->read<Trivial::TrivialByte1>() == 0x01);
+  REQUIRE(new_trivial->read<Trivial::TrivialByte2>() == 0x02);
+  REQUIRE(new_trivial->read<Trivial::TrivialByte3>() == 0x03);
+  REQUIRE(new_trivial->read<Trivial::TrivialByte4>() == 0x04);
+
+  REQUIRE(new_trivial->read<Trivial::Byte2>() == 0x20);
+
+  REQUIRE(new_trivial->read<Trivial::TrivialWord>() == 0x0403);
+
+  REQUIRE(new_trivial->read<Trivial::TrivialValue>() == 0x04030201);
+
+  new_trivial->write<Trivial::TrivialByte3, 0x30>();
+
+  new_trivial->write<Trivial::TrivialByte4>(0x40);
+
+  REQUIRE(new_trivial->is<Trivial::TrivialByte1, 0x01>());
+  REQUIRE(new_trivial->is<Trivial::TrivialByte2, 0x02>());
+  REQUIRE(new_trivial->is<Trivial::TrivialByte3, 0x30>());
+  REQUIRE(new_trivial->is<Trivial::TrivialByte4, 0x40>());
+
+  REQUIRE(new_trivial->is<Trivial::TrivialWord, 0x4030>());
+
+  REQUIRE(new_trivial->read<Trivial::TrivialValue>() == 0x40300201);
+
+  new_trivial->write<Trivial::TrivialByte1, 0x11>();
+
+  new_trivial->write<Trivial::TrivialByte2>(0x22);
+
+  REQUIRE(new_trivial->is<Trivial::TrivialByte1, 0x11>());
+  REQUIRE(new_trivial->is<Trivial::TrivialByte2, 0x22>());
+  REQUIRE(new_trivial->is<Trivial::TrivialByte3, 0x30>());
+  REQUIRE(new_trivial->is<Trivial::TrivialByte4, 0x40>());
+
+  REQUIRE(new_trivial->read<Trivial::Byte2>() == 0x21);
+
+  new_trivial->write<Trivial::Byte2, 0xFF>();
+
+  REQUIRE(new_trivial->is<Trivial::TrivialByte1, 0xF1>());
+  REQUIRE(new_trivial->is<Trivial::TrivialByte2, 0x2F>());
+  REQUIRE(new_trivial->is<Trivial::TrivialByte3, 0x30>());
+  REQUIRE(new_trivial->is<Trivial::TrivialByte4, 0x40>());
 
 
 }
