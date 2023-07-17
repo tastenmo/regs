@@ -24,6 +24,13 @@ jobs:
       uses: KyleMayes/install-llvm-action@v1
       with:
        version: "16.0"
+    - name: Test (Ubuntu / macOS)
+      if: runner.os == 'ubuntu' || runner.os == 'macos'
+      run: |
+        echo $CC
+        echo $CXX
+        $CC --version
+        $CXX --version
 
     - name: Symlink libc++.so (Linux)
       if: contains(matrix.os, 'ubuntu')
