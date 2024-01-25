@@ -1,61 +1,71 @@
 
+#include "catch2/matchers/catch_matchers_floating_point.hpp"
 #include <RegisterPack.h>
 
 #include <catch2/catch_all.hpp>
+#include <sys/types.h>
 
 using namespace regs;
+using namespace Catch::Matchers;
 
 /**
- * @brief HeaderPack is a RegisterPack with 40 bytes
+ * @brief FrameHeader is a RegisterPack with 40 bytes
  *
  */
-struct HeaderPack : public RegisterPack<40> {
+struct FrameHeader : public RegisterPack<40> {
   using RegisterPack::RegisterPack;
+
+  struct Magic0 : public PackedRegister<FrameHeader, Magic0, 0, uint32_t> {};
+  struct Magic1 : public PackedRegister<FrameHeader, Magic1, 4, uint32_t> {};
+  struct Version : public PackedRegister<FrameHeader, Version, 8, uint32_t> {};
+  struct total_length
+    : public PackedRegister<FrameHeader, total_length, 12, uint32_t> {};
+  struct platform : public PackedRegister<FrameHeader, platform, 16, uint32_t> {};
+  struct time_cpu_cycle
+    : public PackedRegister<FrameHeader, time_cpu_cycle, 24, uint32_t> {};
+  struct detect_obj_no
+    : public PackedRegister<FrameHeader, detect_obj_no, 28, uint32_t> {};
+  struct tlvs_no : public PackedRegister<FrameHeader, tlvs_no, 32, uint32_t> {};
+  struct sub_frame_no
+    : public PackedRegister<FrameHeader, sub_frame_no, 36, uint32_t> {};
+
 };
 
-struct Magic0;
-struct Magic0 : public PackedRegister<HeaderPack, Magic0, 0, uint32_t> {
-  using Magic0_1 = Field<Magic0, 0, 8, read_only, uint8_t>;
-  using Magic0_2 = Field<Magic0, 8, 8, read_only, uint8_t>;
-  using Magic0_3 = Field<Magic0, 16, 8, read_only, uint8_t>;
-  using Magic0_4 = Field<Magic0, 24, 8, read_only, uint8_t>;
+struct TlvHeader :public RegisterPack<8> {
+  using RegisterPack::RegisterPack;
+
+  struct TlvType : public PackedRegister<TlvHeader, TlvType, 0, uint32_t> {};
+  struct Length : public PackedRegister<TlvHeader, Length, 4, uint32_t> {};
 };
 
-struct Magic1;
-struct Magic1 : public PackedRegister<HeaderPack, Magic1, 4, uint32_t> {
-  using Magic1_1 = Field<Magic1, 0, 8, read_only, uint8_t>;
-  using Magic1_2 = Field<Magic1, 8, 8, read_only, uint8_t>;
-  using Magic1_3 = Field<Magic1, 16, 8, read_only, uint8_t>;
-  using Magic1_4 = Field<Magic1, 24, 8, read_only, uint8_t>;
+struct DetectedPoints : public RegisterPack<16> {
+  using RegisterPack::RegisterPack;
+
+  struct x : public PackedRegister<DetectedPoints, x, 0, float> {};
+  struct y : public PackedRegister<DetectedPoints, y, 4, float> {};
+  struct z : public PackedRegister<DetectedPoints, z, 8, float> {};
+  struct v : public PackedRegister<DetectedPoints, v, 12, float> {};
 };
 
-struct version;
-struct version : public PackedRegister<HeaderPack, version, 8, uint32_t> {};
+struct SideInfo : public RegisterPack<4> {
+  using RegisterPack::RegisterPack;
 
-struct total_length;
-struct total_length
-    : public PackedRegister<HeaderPack, total_length, 12, uint32_t> {};
+  struct Point : public PackedRegister<SideInfo, Point, 0, uint32_t> {
+    using snr = Field<Point, 0, 16, 0, read_only, uint16_t>;
+    using noise = Field<Point, 16, 16, 0, read_only, uint16_t>;
 
-struct platform;
-struct platform : public PackedRegister<HeaderPack, platform, 16, uint32_t> {};
 
-struct frame_no;
-struct frame_no : public PackedRegister<HeaderPack, frame_no, 20, uint32_t> {};
+  };
+};
 
-struct time_cpu_cycle;
-struct time_cpu_cycle
-    : public PackedRegister<HeaderPack, time_cpu_cycle, 24, uint32_t> {};
+template<typename T> struct Point3D{
 
-struct detect_obj_no;
-struct detect_obj_no
-    : public PackedRegister<HeaderPack, detect_obj_no, 28, uint32_t> {};
+  Point3D(T x, T y, T z) : x(x), y(y), z(z) {}
 
-struct tlvs_no;
-struct tlvs_no : public PackedRegister<HeaderPack, tlvs_no, 32, uint32_t> {};
-
-struct sub_frame_no;
-struct sub_frame_no
-    : public PackedRegister<HeaderPack, sub_frame_no, 36, uint32_t> {};
+  T x;
+  T y;
+  T z;
+};
 
 std::byte raw_data[96] = {
     0x02_b, 0x01_b, 0x04_b, 0x03_b, 0x06_b, 0x05_b, 0x08_b, 0x07_b, // magic
@@ -84,19 +94,47 @@ std::byte raw_data[96] = {
 
 TEST_CASE("RegSet", "[regs]") {
 
-  HeaderPack *header_pack = new (&raw_data) HeaderPack(noInit{});
+  FrameHeader *header_pack = new (&raw_data) FrameHeader(noInit{});
 
-  Magic0 magic0(*header_pack);
+  //HeaderPack::Magic(*header_pack).read() == 0x02030405;
 
-  //STATIC_REQUIRE(sizeof(header_pack) == 40);
+  REQUIRE(FrameHeader::Magic0(*header_pack).read() == 0x03040102);
+  REQUIRE(FrameHeader::Magic1(*header_pack).read() == 0x07080506);
 
-  REQUIRE(magic0.read<Magic0::Magic0_1>() == 2);
-  REQUIRE(magic0.read<Magic0::Magic0_2>() == 1);
-  REQUIRE(magic0.read<Magic0::Magic0_3>() == 4);
-  REQUIRE(magic0.read<Magic0::Magic0_4>() == 3);
+  REQUIRE(FrameHeader::total_length(*header_pack).read() == 96);
 
-  total_length length(*header_pack);
-  REQUIRE(length.read() == 6);
+  uint32_t detect_obj_no = FrameHeader::detect_obj_no(*header_pack).read();
+
+  REQUIRE(detect_obj_no == 3);
+
+  TlvHeader *tlv_header = new (&raw_data[40]) TlvHeader(noInit{});
+
+  REQUIRE(TlvHeader::TlvType(*tlv_header).read() == 1);
+  REQUIRE(TlvHeader::Length(*tlv_header).read() == 48);
+
+  std::vector<Point3D<float>> points;
+
+  std::vector<float> velocities;
+
+  for(uint32_t index = 48; index < 48 + (detect_obj_no * 16) ; index += 16) {
+    DetectedPoints *detected_points = new (&raw_data[index]) DetectedPoints(noInit{});
+
+    points.emplace_back(
+        DetectedPoints::x(*detected_points).read(),
+        DetectedPoints::y(*detected_points).read(),
+        DetectedPoints::z(*detected_points).read()
+        );
+    
+    velocities.emplace_back(DetectedPoints::v(*detected_points).read());
+
+  }
+
+  REQUIRE_THAT(points[0].x, WithinAbs(0.07, 0.08));
+  REQUIRE_THAT(points[0].y, WithinAbs(0.6, 0.7));
+  REQUIRE_THAT(points[0].z, WithinAbs(0.5, 0.6));
+
+
+
 
 
 }

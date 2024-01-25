@@ -55,7 +55,7 @@ constexpr shift_with_carry shift_left(std::byte src) noexcept {
  * @param src 
  * @return std::ostream& 
  */
-std::ostream& operator<<(std::ostream& output, std::byte src) {
+inline std::ostream& operator<<(std::ostream& output, std::byte src) {
   output << std::to_integer<unsigned>(src);
   return output;
 }

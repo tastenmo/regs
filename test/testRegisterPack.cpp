@@ -19,7 +19,7 @@ struct Register0
 
   using Bits1 = Field<Register0, 4, 3>;
 
-  using Byte2 = Field<Register0, 8, 8, read_write, uint8_t>;
+  using Byte2 = Field<Register0, 8, 8, 0, read_write, uint8_t>;
 
   using Bits2 = Field<Register0, 16, 4>;
 
