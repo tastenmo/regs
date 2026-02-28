@@ -70,7 +70,7 @@ struct Field {
 
   static constexpr unsigned bit_offset = offset % 8;
 
-  static constexpr unsigned byte_count = ((bit_offset + width) / 8);
+  static constexpr unsigned byte_count = ((bit_offset + width + 7) / 8);
 
   static constexpr unsigned count_mask_bytes = sizeof(target_type);
 
@@ -83,10 +83,6 @@ struct Field {
     int bytes_masked = 0;
 
     for (unsigned i = 0; i < count_mask_bytes; i++) {
-      std::cout << "i: " << i << " bit_offset_: " << offset_
-                << " byte_offset: " << byte_offset << " width_: " << width_
-                << std::endl;
-
       if (i >= byte_offset) {
         uint8_t mask_ = ((1 << width_) - 1) << offset_;
 
@@ -106,8 +102,6 @@ struct Field {
       }
     }
 
-    std::cout << "MaskByte: " << _maskBytes << std::endl;
-
     return _maskBytes;
   }
 
@@ -115,9 +109,6 @@ struct Field {
     requires std::integral<value_type>
   {
     value_type result;
-
-    std::cout << "read_masked - count_mask_bytes: " << count_mask_bytes
-              << std::endl;
 
     byte_array<count_mask_bytes> Bytes;
 
@@ -128,12 +119,8 @@ struct Field {
       Bytes[i] = target[i] & mask[i];
     }
 
-    std::cout << "read_masked - Bytes: " << Bytes << std::endl;
-
     auto shifted = array_shift_right<count_mask_bytes, unsigned, value_size>(
         Bytes, offset);
-
-    std::cout << "read_masked - Shifted: " << shifted << std::endl;
 
     result = std::bit_cast<value_type>(shifted);
 
@@ -145,9 +132,6 @@ struct Field {
   {
     // value_type result;
 
-    std::cout << "read_masked - count_mask_bytes: " << count_mask_bytes
-              << std::endl;
-
     byte_array<count_mask_bytes> Bytes;
 
     auto mask = maskBytes();
@@ -157,11 +141,7 @@ struct Field {
       Bytes[i] = target[i] & mask[i];
     }
 
-    std::cout << "read_masked - Bytes: " << Bytes << std::endl;
-
     auto shifted = array_shift_right(Bytes, offset);
-
-    std::cout << "read_masked - Shifted: " << shifted << std::endl;
 
     auto number = std::bit_cast<std::underlying_type_t<value_type>>(shifted);
 
@@ -172,9 +152,6 @@ struct Field {
     requires std::integral<value_type>
   {
     value_type result;
-
-    std::cout << "read_trivial integral - byte_offset: " << byte_offset
-              << " byte_count: " << byte_count << std::endl;
 
     auto Bytes = to_byte_array<byte_count>(target.subspan(byte_offset, byte_count));
     //auto Bytes = to_byte_array<byte_count>(target);
@@ -187,9 +164,6 @@ struct Field {
   static constexpr auto read_trivial(std::span<const std::byte> const target)
     requires std::is_enum_v<value_type>
   {
-    std::cout << "read_trivial enum - byte_offset: " << byte_offset
-              << " byte_count: " << byte_count << std::endl;
-
     auto number = std::bit_cast<std::underlying_type_t<value_type>>(
         target.subspan(byte_offset, byte_count));
 
@@ -202,9 +176,6 @@ struct Field {
   {
     using ValueArray = byte_array<value_size>;
 
-    std::cout << "write_masked - count_mask_bytes: " << count_mask_bytes
-              << std::endl;
-
     ValueArray values;
 
     values = std::bit_cast<ValueArray>(value);
@@ -213,20 +184,12 @@ struct Field {
 
     std::copy(values.begin(), values.begin() + value_size, value_bytes.begin());
 
-    std::cout << "write_masked - value_bytes: " << value_bytes << std::endl;
-
     auto shifted = array_shift_left(value_bytes, offset);
-
-    std::cout << "write_masked - shifted values: " << shifted << std::endl;
 
     auto mask = maskBytes();
 
-    std::cout << "write_masked - mask: " << mask << std::endl;
-
     for (unsigned i = 0; i < count_mask_bytes; i++) {
-      std::cout << "target[" << i << "] = " << target[i];
       target[i] = (target[i] & ~mask[i]) | (shifted[i] & mask[i]);
-      std::cout << "--> " << target[i] << std::endl;
     }
 
     return;
@@ -238,29 +201,18 @@ struct Field {
   {
     using ValueArray = byte_array<count_mask_bytes>;
 
-    std::cout << "write_masked - count_mask_bytes: " << count_mask_bytes
-              << std::endl;
-
     ValueArray value_bytes;
 
     auto number = std::bit_cast<std::underlying_type_t<value_type>>(value);
 
     value_bytes = std::bit_cast<ValueArray>(number);
 
-    std::cout << "write_masked - value_bytes: " << value_bytes << std::endl;
-
     auto shifted = array_shift_left(value_bytes, offset);
-
-    std::cout << "write_masked - shifted values: " << shifted << std::endl;
 
     auto mask = maskBytes();
 
-    std::cout << "write_masked - mask: " << mask << std::endl;
-
     for (unsigned i = 0; i < count_mask_bytes; i++) {
-      std::cout << "target[" << i << "] = " << target[i];
       target[i] = (target[i] & ~mask[i]) | (shifted[i] & mask[i]);
-      std::cout << "--> " << target[i] << std::endl;
     }
 
     return;
@@ -271,9 +223,6 @@ struct Field {
     requires std::integral<value_type>
   {
     using ValueArray = byte_array<byte_count>;
-
-    std::cout << "write_trivial integral - byte_offset: " << byte_offset
-              << " byte_count: " << byte_count << std::endl;
 
     ValueArray values;
 
@@ -291,9 +240,6 @@ struct Field {
     requires std::is_enum_v<value_type>
   {
     using ValueArray = byte_array<byte_count>;
-
-    std::cout << "write_trivial enum - byte_offset: " << byte_offset
-              << " byte_count: " << byte_count << std::endl;
 
     ValueArray values;
 

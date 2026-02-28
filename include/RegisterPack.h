@@ -20,7 +20,7 @@ class PackedRegister : public RegisterBase<Reg, Reg_type> {
 
  private:
 
- const reg_pack& _pack;
+ reg_pack& _pack;
 
 
 
@@ -30,7 +30,7 @@ class PackedRegister : public RegisterBase<Reg, Reg_type> {
    * @brief Default constructor with initialization
    *
    */
-  constexpr PackedRegister(const reg_pack &pack) : _pack(pack) {}
+  constexpr PackedRegister(reg_pack &pack) : _pack(pack) {}
   
 
   auto span(){

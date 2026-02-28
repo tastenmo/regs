@@ -13,7 +13,6 @@
 
 #include <cstdint>
 #include <cstddef>
-#include <iostream>
 #include <limits>
 #include <span>
 #include <utility>
@@ -46,18 +45,6 @@ constexpr shift_with_carry shift_right(std::byte src) noexcept {
  */
 constexpr shift_with_carry shift_left(std::byte src) noexcept {
   return std::make_pair(src << 1, (src & std::byte{0x80}) == std::byte{0x80});
-}
-
-/**
- * @brief stream operator for printing std::byte
- * 
- * @param output 
- * @param src 
- * @return std::ostream& 
- */
-inline std::ostream& operator<<(std::ostream& output, std::byte src) {
-  output << std::to_integer<unsigned>(src);
-  return output;
 }
 
 /**
@@ -107,14 +94,6 @@ struct byte_array {
   constexpr const_reference operator[](size_type idx) const noexcept {
     ESCAD_ASSERT(idx < size(), "Past-the-end access of byte_array");
     return _bytes[idx];
-  }
-
-  friend std::ostream& operator<<(std::ostream& output, const byte_array& arr) {
-    for (value_type element : arr) {
-      output << element << ", ";
-    }
-
-    return output;
   }
 };
 
