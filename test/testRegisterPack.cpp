@@ -1,5 +1,6 @@
 
 #include <RegisterPack.h>
+#include <RegisterArray.h>
 
 #include <catch2/catch_all.hpp>
 
@@ -36,6 +37,18 @@ struct Register1
   using Nibble1 = Field<Register1, 3, 5>;
 };
 
+template <unsigned Offset>
+struct ArrayRegister
+    : public PackedRegister<TestRegisterPack, ArrayRegister<Offset>, Offset,
+                            uint8_t> {
+  using PackedRegister<TestRegisterPack, ArrayRegister<Offset>, Offset,
+                       uint8_t>::PackedRegister;
+
+  using Value = Field<ArrayRegister<Offset>, 0, 8, 0, read_write, uint8_t>;
+};
+
+using ByteRegisters = RegisterArray<ArrayRegister, 0, 8, 1>;
+
 std::byte raw_set[8] = {0x03_b, 0x11_b, 0_b, 0_b, 1_b, 0_b, 0_b, 0_b};
 
 TEST_CASE("RegSet", "[regs]") {
@@ -63,4 +76,23 @@ TEST_CASE("RegSet", "[regs]") {
   REQUIRE(reg1.is<Register1::Bool3, false>());
 
 
+}
+
+TEST_CASE("RegisterArray", "[regs]") {
+  std::byte raw_array_pack[8] = {0x10_b, 0x20_b, 0x30_b, 0x40_b,
+                                 0x50_b, 0x60_b, 0x70_b, 0x80_b};
+
+  TestRegisterPack *reg_set = new (&raw_array_pack) TestRegisterPack(noInit{});
+
+  auto reg_static = ByteRegisters::at<2>(*reg_set);
+  REQUIRE(reg_static.read<ArrayRegister<2>::Value>() == 0x30);
+
+  REQUIRE(ByteRegisters::read<3>(*reg_set) == 0x40);
+  REQUIRE(ByteRegisters::read(*reg_set, 4) == 0x50);
+
+  ByteRegisters::write<1>(*reg_set, 0x2A);
+  REQUIRE(ByteRegisters::read<1>(*reg_set) == 0x2A);
+
+  ByteRegisters::write(*reg_set, 6, 0x6A);
+  REQUIRE(ByteRegisters::read(*reg_set, 6) == 0x6A);
 }

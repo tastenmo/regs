@@ -6,6 +6,7 @@ set(PROJECT_DESCRIPTION "Modern C++ library for register manipulation and binary
 #include(cmake/pico_sdk_import.cmake)
 include(CheckCXXCompilerFlag)
 include(CMakeDependentOption)
+include(CTest)
 include(GNUInstallDirs)
 
 if(CMAKE_PROJECT_NAME STREQUAL PROJECT_NAME)

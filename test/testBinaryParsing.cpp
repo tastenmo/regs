@@ -1,6 +1,7 @@
 
 #include "catch2/matchers/catch_matchers_floating_point.hpp"
 #include <RegisterPack.h>
+#include <RegisterArray.h>
 
 #include <catch2/catch_all.hpp>
 #include <sys/types.h>
@@ -46,6 +47,37 @@ struct DetectedPoints : public RegisterPack<16> {
   struct z : public PackedRegister<DetectedPoints, z, 8, float> {};
   struct v : public PackedRegister<DetectedPoints, v, 12, float> {};
 };
+
+struct DetectedPointsArray : public RegisterPack<48> {
+  using RegisterPack::RegisterPack;
+};
+
+static constexpr std::size_t kDetectedPointStrideBytes = 16;
+static constexpr std::size_t kDetectedPointPayloadOffset = 48;
+static constexpr std::size_t kMaxDetectedPoints = 3;
+
+struct DetectedPointValue {
+  float x;
+  float y;
+  float z;
+  float v;
+};
+
+template <unsigned Offset>
+struct DetectedPoint
+    : public PackedRegister<DetectedPointsArray, DetectedPoint<Offset>,
+                            Offset, DetectedPointValue> {
+  using PackedRegister<DetectedPointsArray, DetectedPoint<Offset>, Offset,
+                       DetectedPointValue>::PackedRegister;
+
+  using x = Field<DetectedPoint<Offset>, 0, 32, 0, read_only, float>;
+  using y = Field<DetectedPoint<Offset>, 0, 32, 4, read_only, float>;
+  using z = Field<DetectedPoint<Offset>, 0, 32, 8, read_only, float>;
+  using v = Field<DetectedPoint<Offset>, 0, 32, 12, read_only, float>;
+};
+
+using DetectedPointArray =
+  RegisterArray<DetectedPoint, 0, kMaxDetectedPoints, kDetectedPointStrideBytes>;
 
 struct SideInfo : public RegisterPack<4> {
   using RegisterPack::RegisterPack;
@@ -106,6 +138,7 @@ TEST_CASE("RegSet", "[regs]") {
   uint32_t detect_obj_no = FrameHeader::detect_obj_no(*header_pack).read();
 
   REQUIRE(detect_obj_no == 3);
+  REQUIRE(detect_obj_no <= kMaxDetectedPoints);
 
   TlvHeader *tlv_header = new (&raw_data[40]) TlvHeader(noInit{});
 
@@ -116,16 +149,18 @@ TEST_CASE("RegSet", "[regs]") {
 
   std::vector<float> velocities;
 
-  for(uint32_t index = 48; index < 48 + (detect_obj_no * 16) ; index += 16) {
-    DetectedPoints *detected_points = new (&raw_data[index]) DetectedPoints(noInit{});
+    points.reserve(detect_obj_no);
+    velocities.reserve(detect_obj_no);
 
-    points.emplace_back(
-        DetectedPoints::x(*detected_points).read(),
-        DetectedPoints::y(*detected_points).read(),
-        DetectedPoints::z(*detected_points).read()
-        );
-    
-    velocities.emplace_back(DetectedPoints::v(*detected_points).read());
+  DetectedPointsArray *detected_points =
+      new (&raw_data[kDetectedPointPayloadOffset]) DetectedPointsArray(noInit{});
+
+  for (uint32_t point_index = 0; point_index < detect_obj_no; point_index++) {
+    auto point = DetectedPointArray::read(*detected_points, point_index);
+
+    points.emplace_back(point.x, point.y, point.z);
+
+    velocities.emplace_back(point.v);
 
   }
 

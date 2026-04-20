@@ -10,6 +10,7 @@
  */
 
 #include <Register.h>
+#include <RegisterArray.h>
 
 #include <catch2/catch_all.hpp>
 
@@ -100,6 +101,8 @@ struct Trivial : Register<Trivial, uint32_t> {
   using TrivialByte4 = Field<Trivial, 0, 8, 3, read_write, uint8_t>;
 
   using TrivialValue = Field<Trivial, 0, 32, 0, read_write, uint32_t>;
+
+  using ByteArray = FieldArray<Trivial, 0, 8, 4, 8, 0, read_write, uint8_t>;
 
 };
 
@@ -290,6 +293,15 @@ TEST_CASE("Trivial", "[regs]") {
   REQUIRE(new_trivial->is<Trivial::TrivialByte2, 0x2F>());
   REQUIRE(new_trivial->is<Trivial::TrivialByte3, 0x30>());
   REQUIRE(new_trivial->is<Trivial::TrivialByte4, 0x40>());
+
+  REQUIRE(new_trivial->is<Trivial::ByteArray, 0, 0xF1>());
+  REQUIRE(new_trivial->is<Trivial::ByteArray, 1, 0x2F>());
+
+  new_trivial->write<Trivial::ByteArray, 2>(0x55);
+  REQUIRE(new_trivial->read<Trivial::ByteArray, 2>() == 0x55);
+
+  new_trivial->write<Trivial::ByteArray>(3, 0xAA);
+  REQUIRE(new_trivial->read<Trivial::ByteArray>(3) == 0xAA);
 
 
 }
